@@ -1,0 +1,158 @@
+#include <cassert>
+#include <cmath>
+#include <cstdio>
+#include <algorithm>
+#include <set>
+#include <vector>
+
+#define EPS 1e-9
+
+using namespace std;
+
+struct Point
+{
+    double x, y;
+
+    Point()
+    {
+        x = y = 0;
+    }
+
+    Point(double x, double y) :
+        x(x), y(y)
+    {
+    }
+
+    bool operator<(const Point& other) const
+    {
+        if(fabs(x - other.x) > EPS)
+            return x < other.x;
+        return y < other.y;
+    }
+};
+
+struct Vect
+{
+    double x, y;
+
+    Vect()
+    {
+        x = y = 0;
+    }
+
+    Vect(const Point & first, const Point & second)
+    {
+        x = second.x - first.x;
+        y = second.y - first.y;
+    }
+};
+
+double crossProduct(const Vect& first, const Vect& second)
+{
+    return first.x*second.y - second.x*first.y;
+}
+
+bool isCCW(const Point & first, const Point & second, const Point & third)
+{
+    return crossProduct(Vect(first, second), Vect(second, third)) > -EPS;
+}
+
+void orderCCW(Point & first, Point & second, Point & third)
+{
+    if(isCCW(first, second, third))
+        return;// we're done
+
+    Point tmp;
+    if(isCCW(first, third, second))
+        swap(third, second);
+    else if(isCCW(second, first, third))
+        swap(first, second);
+    else if(isCCW(second, third, first))
+    {
+        Point tmp = first;
+        first = second;
+        second = third;
+        third = tmp;
+    }
+    else if(isCCW(third, first, second))
+    {
+        Point tmp = second;
+        second = first;
+        first = third;
+        third = tmp;
+    }
+    else if(isCCW(third, second, first))
+        swap(third, first);
+}
+
+int getNumContainingOrchardTrees(const Point & first, const Point & second, const Point & third)
+{
+    // check first vector
+    Vect vect(first, second);
+    Vect next;
+    set<Point> points;
+    for(int x = 1; x <= 99; ++x)
+    {
+        int last = 0;
+        for(int y = 1; y <= 99; ++y)
+        {
+            Point p(x, y);
+            next = Vect(second, p);
+            double cp = crossProduct(vect, next);
+            if(cp > -EPS)
+            {
+                points.insert(p);
+                last = y;
+            }
+            else if(last > 0)
+            {
+                break;
+            }
+        }
+    }
+
+    vect = Vect(second, third);
+    set<Point>::iterator it = points.begin(), end = points.end();
+    set<Point> points2;
+    for(; it != end; ++it)
+    {
+        next = Vect(third, *it);
+        double cp = crossProduct(vect, next);
+        if(cp > -EPS)
+            points2.insert(*it);
+    }
+
+    vect = Vect(third, first);
+    it = points2.begin(), end = points2.end();
+    set<Point> points3;
+    for(; it != end; ++it)
+    {
+        next = Vect(first, *it);
+        double cp = crossProduct(vect, next);
+        if(cp > -EPS)
+            points3.insert(*it);
+    }
+
+    return points3.size();
+}
+
+int main()
+{
+    double x1, y1, x2, y2, x3, y3;
+    int dummy;
+    while(true)
+    {
+        dummy = scanf("%lf %lf %lf %lf %lf %lf\n",
+                      &x1, &y1, &x2, &y2, &x3, &y3);
+        if(x1 == 0 && y1 == 0 && x2 == 0 && y2 == 0 &&
+                x3 == 0 && y3 == 0)
+            break;
+        Point first(x1, y1);
+        Point second(x2, y2);
+        Point third(x3, y3);
+        orderCCW(first, second, third);
+        int numOrchardTrees = getNumContainingOrchardTrees(first, second, third);
+        printf("%4d\n", numOrchardTrees);
+    }
+    return 0;
+}

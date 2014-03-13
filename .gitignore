@@ -1,0 +1,4 @@
+*.tar.*
+a.out
+test
+makefile
